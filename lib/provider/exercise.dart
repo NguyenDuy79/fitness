@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:fitness_app/helper/db_helper.dart';
 import 'package:flutter/material.dart';
 
 class ExerciseItem {
@@ -30,6 +33,11 @@ class Exercise with ChangeNotifier {
     return newList;
   }
 
+  reset() {
+    newList = [];
+    notifyListeners();
+  }
+
   addExercise(String name, bool choose) {
     newList.add(ExerciseItem(name: name, set: 0, restTime: 0, choose: choose));
   }
@@ -43,9 +51,22 @@ class Exercise with ChangeNotifier {
   }
 
   updateExercise(ExerciseItem exerciseItem) {
+    final dateTime = DateTime.now();
     final exerciseIndex =
         newList.indexWhere((element) => element.name == exerciseItem.name);
     newList[exerciseIndex] = exerciseItem;
+
     notifyListeners();
+  }
+
+  addDatabase(String dateTime) {
+    print(dateTime + '1');
+    String exercise = '';
+    newList.forEach((element) {
+      exercise +=
+          '${element.name} set:${element.set} restTime:${element.restTime};';
+    });
+    DBhelper.insert(
+        'history_table', {'dateTime': dateTime, 'exercise': exercise});
   }
 }

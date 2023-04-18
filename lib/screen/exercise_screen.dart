@@ -3,9 +3,11 @@ import 'package:fitness_app/screen/workout_screen.dart';
 import 'package:fitness_app/widget/choose_screen_item.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 class ChooseExerciseScreen extends StatefulWidget {
   ChooseExerciseScreen({super.key});
+  static const router = '/choose-screen';
 
   @override
   State<ChooseExerciseScreen> createState() => _ChooseExerciseScreenState();
@@ -19,12 +21,12 @@ class _ChooseExerciseScreenState extends State<ChooseExerciseScreen> {
   @override
   Widget build(BuildContext context) {
     final data = Provider.of<Exercise>(context, listen: false).newItem;
+    final exercise = Provider.of<Exercise>(context).item;
 
     _showDialog(BuildContext context, int count) {
       final _from = GlobalKey<FormState>();
       return showDialog(
           context: context,
-          barrierDismissible: false,
           builder: (ctx) {
             return AlertDialog(
                 scrollable: true,
@@ -101,7 +103,11 @@ class _ChooseExerciseScreenState extends State<ChooseExerciseScreen> {
                         });
                         print('$counter');
                         if (counter == data.length) {
-                          Navigator.of(context).pushNamed(WorkoutScreen.router);
+                          exercise.forEach((element) {
+                            element.choose = false;
+                          });
+                          Navigator.of(context)
+                              .pushReplacementNamed(WorkoutScreen.router);
                           setState(() {
                             counter = 0;
                           });
@@ -114,22 +120,60 @@ class _ChooseExerciseScreenState extends State<ChooseExerciseScreen> {
           });
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Choose'),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              ChooseScreenItem(),
-              ElevatedButton(
-                  onPressed: () => _showDialog(context, counter),
-                  child: Text(
-                    'Done',
-                    style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-                  ))
-            ]),
+    final appBar = AppBar(
+      title: const Text('choose'),
+    );
+
+    return WillPopScope(
+      onWillPop: () async {
+        exercise.forEach((element) {
+          element.choose = false;
+        });
+        Provider.of<Exercise>(context, listen: false).newList = [];
+        return true;
+      },
+      child: Scaffold(
+        appBar: appBar,
+        body: SingleChildScrollView(
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  height: (MediaQuery.of(context).size.height -
+                          appBar.preferredSize.height -
+                          MediaQuery.of(context).padding.top) *
+                      0.9,
+                  child: ChooseScreenItem(
+                    exercise,
+                  ),
+                ),
+                ElevatedButton(
+                    onPressed: () {
+                      if (data.isEmpty) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                          content: Text('Please choose exercise'),
+                          duration: Duration(seconds: 2),
+                        ));
+                      } else {
+                        _showDialog(context, counter);
+                      }
+                    },
+                    child: const Text(
+                      'Done',
+                      style:
+                          TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                    )),
+                SizedBox(
+                  height: (MediaQuery.of(context).size.height -
+                          appBar.preferredSize.height -
+                          MediaQuery.of(context).padding.top) *
+                      0.025,
+                )
+              ]),
+        ),
       ),
     );
   }
